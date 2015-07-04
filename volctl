@@ -1,0 +1,109 @@
+#!/bin/sh -e
+
+alsa_get(){
+	if ( amixer get Master | grep -q -e "\[on\]" ); then
+		amixer get Master | grep -o -e "[0-9]*%" | cut -f1 -d%
+	else
+		echo "off"
+	fi
+}
+
+alsa_set(){
+	amixer -q set Master "$1"
+}
+
+notify(){
+	if [[ -s "$DISPLAY" ]]; then
+		notify-send -u low "$1"
+	else
+		echo "$1"
+	fi
+}
+
+# TODO
+sndsys=alsa
+
+case $1 in
+	mute)
+		"$sndsys"_set mute
+		notify "Muted"
+	;;
+	unmute)
+		"$sndsys"_set unmute
+		notify "Volume `"$sndsys"_get`%"
+	;;
+	set)
+		cmd="$2"
+		if [ -z "$cmd" ]; then
+			notify "Missing argument: 'volctl set (+|-)VALUE'"
+			exit 1
+		fi
+		if [ ${cmd:0:1} == "+" ] || [ ${cmd:0:1} == "-" ]; then
+			new=$((`"$sndsys"_get`$cmd))
+		else
+			new=$cmd
+		fi
+		[ $new -gt 100 ] && new=100
+		[ $new -lt 0 ] && new=0
+		"$sndsys"_set $new%
+		;;
+	*)
+		vol=`"$sndsys"_get`
+		if [ "$vol" == "off" ]; then
+			notify "Muted"
+		else
+			notify "Volume $vol%"
+		fi
+		
+	;;
+esac
+
+exit
+
+set_volume_perc(){
+    SETVOL=$1
+    echo "volctl: Volume set to $SETVOL%"
+    #notify-send -t 500 -i /usr/share/icons/gnome/48x48/status/audio-volume-high.png "Volume: $SETVOL%"
+    pactl set-sink-volume 0 $((SETVOL*65536/100))
+}
+
+case $1 in
+    up)
+        CURVOL=`pactl list | grep -A12 'Sink #0' | grep -o -e '[0-9]*%' | head -n 1 | grep -o -e '[0-9]*'`
+        if [ $CURVOL -eq 100 ]; then
+            NEWVOL=100
+        else
+            NEWVOL=$((CURVOL+5))
+        fi
+        set_volume_perc $NEWVOL
+    ;;
+    down)
+        CURVOL=`pactl list | grep -A12 'Sink #0' | grep -o -e '[0-9]*%' | head -n 1 | grep -o -e '[0-9]*'`
+        if [ $CURVOL -eq 0 ]; then
+            NEWVOL=0
+        else
+            NEWVOL=$((CURVOL-5))
+        fi
+        set_volume_perc $NEWVOL
+    ;;
+    mute)
+        CURMUTE=`pactl list | grep -A15 'Sink #0' | grep -o -e 'Mute: .*' | cut -d\  -f 2`
+        if [ "$CURMUTE" == "no" ]; then
+            NEWMUTE=1
+            echo "volctl: Sound muted"
+            #notify-send -t 1000 -i /usr/share/icons/gnome/48x48/status/audio-volume-muted.png "Volume muted"
+        else
+            NEWMUTE=0
+            echo "volctl: Sound unmuted"
+            #notify-send -t 1000 -i /usr/share/icons/gnome/48x48/status/audio-volume-medium.png "Volume unmuted"
+        fi
+        pactl set-sink-mute 0 $NEWMUTE
+    ;;
+    reset)
+        pactl set-sink-mute 0 0
+        set_volume_perc 30
+    ;;
+    *)
+    ;;
+esac
+
