@@ -25,12 +25,18 @@ pulse_get(){
 
 pulse_set(){
 	value=$1
-	pactl set-sink-volume 0 $((value*65536/100))
+	if [ "$value" == "mute" ]; then
+		pactl set-sink-mute 0 1
+	elif [ "$value" == "unmute" ]; then
+		pactl set-sink-mute 0 0
+	else
+		pactl set-sink-volume 0 $value
+	fi
 }
 
 # GENERIC
 notify(){
-	if [[ ! -z "$DISPLAY" ]] && ( which notify-send >/dev/null ); then
+	if [ ! -z "$DISPLAY" ] && ( which notify-send >/dev/null ); then
 		notify-send -i "audio-volume-medium" -u low "$1"
 	else
 		echo "$1"
@@ -38,7 +44,7 @@ notify(){
 }
 
 # Backend selection
-if ( which pactl >/dev/null ); then
+if ( which pactl >/dev/null && pidof pulseaudio >/dev/null ); then
 	sndsys=pulse
 elif ( which amixer >/dev/null ); then
 	sndsys=alsa
@@ -50,11 +56,11 @@ fi
 case $1 in
 	mute)
 		"$sndsys"_set mute
-		notify "Sound muted"
+		#notify "Sound muted"
 	;;
 	unmute)
 		"$sndsys"_set unmute
-		notify "Volume `"$sndsys"_get`%"
+		#notify "Volume `"$sndsys"_get`%"
 	;;
 	set)
 		cmd="$2"
