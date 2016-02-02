@@ -62,29 +62,29 @@ case $1 in
 		"$sndsys"_set unmute
 		#notify "Volume `"$sndsys"_get`%"
 	;;
-	set)
-		cmd="$2"
-		if [ -z "$cmd" ]; then
-			notify "Missing argument: 'volctl set (+|-)VALUE'"
-			exit 1
-		fi
-		if [ ${cmd:0:1} == "+" ] || [ ${cmd:0:1} == "-" ]; then
-			new=$((`"$sndsys"_get`$cmd))
-		else
-			new=$cmd
-		fi
-		[ $new -gt 100 ] && new=100
-		[ $new -lt 0 ] && new=0
-		"$sndsys"_set $new%
-		;;
 	*)
-		vol=`"$sndsys"_get`
-		if [ "$vol" == "off" ]; then
-			notify "Sound muted"
+		if [ -z "$1" ]; then
+			vol=`"$sndsys"_get`
+			if [ "$vol" == "off" ]; then
+				notify "Sound muted"
+			else
+				notify "Volume $vol%"
+			fi
 		else
-			notify "Volume $vol%"
+			cmd="$1"
+			if [ -z "$cmd" ]; then
+				notify "Missing argument: 'volctl set (+|-)VALUE'"
+				exit 1
+			fi
+			if [ ${cmd:0:1} == "+" ] || [ ${cmd:0:1} == "-" ]; then
+				new=$((`"$sndsys"_get`$cmd))
+			else
+				new=$cmd
+			fi
+			[ $new -gt 100 ] && new=100
+			[ $new -lt 0 ] && new=0
+			"$sndsys"_set $new%
 		fi
-		
 	;;
 esac
 
