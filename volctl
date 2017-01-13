@@ -37,7 +37,7 @@ pulse_set(){
 # GENERIC
 notify(){
 	if [ ! -z "$DISPLAY" ] && ( which notify-send >/dev/null ); then
-		notify-send -i "audio-volume-medium" -u low "$1"
+		notify-send -i "audio-volume-$2" -u low "$1"
 	else
 		echo "$1"
 	fi
@@ -49,33 +49,27 @@ if ( which pactl >/dev/null && pidof pulseaudio >/dev/null ); then
 elif ( which amixer >/dev/null ); then
 	sndsys=alsa
 else
-	notify "No supported audio control backend found"
+	notify "No supported audio control backend found" "muted"
 fi
 
 # Main volume control logic
 case $1 in
 	mute)
 		"$sndsys"_set mute
-		#notify "Sound muted"
 	;;
 	unmute)
 		"$sndsys"_set unmute
-		#notify "Volume `"$sndsys"_get`%"
 	;;
 	*)
 		if [ -z "$1" ]; then
 			vol=`"$sndsys"_get`
 			if [ "$vol" == "off" ]; then
-				notify "Sound muted"
+				notify "Sound muted" "muted"
 			else
-				notify "Volume $vol%"
+				notify "Volume $vol%" "medium"
 			fi
 		else
 			cmd="$1"
-			if [ -z "$cmd" ]; then
-				notify "Missing argument: 'volctl set (+|-)VALUE'"
-				exit 1
-			fi
 			if [ ${cmd:0:1} == "+" ] || [ ${cmd:0:1} == "-" ]; then
 				new=$((`"$sndsys"_get`$cmd))
 			else
@@ -87,4 +81,3 @@ case $1 in
 		fi
 	;;
 esac
-
