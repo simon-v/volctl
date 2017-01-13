@@ -38,9 +38,8 @@ pulse_set(){
 notify(){
 	if [ ! -z "$DISPLAY" ] && ( which notify-send >/dev/null ); then
 		notify-send -i "audio-volume-$2" -u low "$1"
-	else
-		echo "$1"
 	fi
+	echo "$1"
 }
 
 # Backend selection
