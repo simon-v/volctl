@@ -59,6 +59,15 @@ case $1 in
 	unmute)
 		"$sndsys"_set unmute
 	;;
+	toggle)
+		if ( "$sndsys"_get | grep -q off ); then
+			"$sndsys"_set unmute
+			notify "Sound unmuted" "medium"
+		else
+			"$sndsys"_set mute
+			notify "Sound muted" "muted"
+		fi
+	;;
 	*)
 		if [ -z "$1" ]; then
 			vol=`"$sndsys"_get`
