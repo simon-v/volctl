@@ -37,7 +37,7 @@ pulse_set(){
 # GENERIC
 notify(){
 	if [ ! -z "$DISPLAY" ] && ( which notify-send >/dev/null ); then
-		notify-send -i "audio-volume-$2" -u low "$1"
+		notify-send -i "audio-volume-$2" -u low "$1" &
 	fi
 	echo "$1"
 }
